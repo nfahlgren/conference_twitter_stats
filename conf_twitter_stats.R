@@ -10,18 +10,19 @@ library(wordcloud)
 CONSUMER_KEY = ''
 CONSUMER_SECRET = ''
 ACCESS_TOKEN = ''
-ACESS_SECRET = ''
+ACCESS_SECRET = ''
 HASHTAG = ''
 
 # Authenticate with your Twitter API app
 setup_twitter_oauth(consumer_key = CONSUMER_KEY,
                     consumer_secret = CONSUMER_SECRET,
                     access_token = ACCESS_TOKEN,
-                    access_secret = ACESS_SECRET)
+                    access_secret = ACCESS_SECRET)
 
 
 # Search Twitter for your conference hashtag
 tweets <- searchTwitter(HASHTAG, n=9999)
+tweets_wc = tweets
 
 # Convert the list to a data frame
 tweets <- twListToDF(tweets)
@@ -64,20 +65,37 @@ p3 <- ggplot(data=tweeters, aes(x=dom)) +
              theme_bw() +
              theme(axis.title = element_text(face="bold"))
 
-# Tweet wordcloud
-# tweets.tm = Corpus(VectorSource(tweets$text))
-# tdm = TermDocumentMatrix(tweets.tm, control = list(removePunctuation = TRUE,
-#                                                    stopwords = c("new", "year", stopwords("english")),
-#                                                    removeNumbers = TRUE, tolower = TRUE))
-# 
-# 
-# extractHTMLStrip(tweets$text)
-# tweets.tm = tm_map(tweets.tm, removeWords, stopwords("english"))
-# tweets.tm = tm_map(tweets.tm, stemDocument)
-# tweets.tm = tm_map(tweets.tm, stripWhitespace)
-# tweets.tm <- tm_map(tweets.tm, tolower)
-# 
-# wordcloud(tweets.tm)
-
 # Plot both plots
 grid.arrange(p1, p2, nrow=1, ncol=2)
+
+
+## Tweet wordcloud
+# get the text from tweets
+tweet_txt = sapply(tweets_wc, function(x) x$getText())
+# remove retweet entities
+tweet_txt = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", tweet_txt)
+# remove at people
+tweet_txt = gsub("@\\w+", "", tweet_txt)
+# remove punctuation
+# tweet_txt = gsub("[[:punct:]]", "", tweet_txt)
+# remove html links
+tweet_txt = gsub("(f|ht)(tp)(s?)(://)(.*)[.|/](.*)", "", tweet_txt)
+
+# remove unnecessary spaces
+#tweet_txt = gsub("[ \t]{2,}", "", tweet_txt)
+#tweet_txt = gsub("^\\s+|\\s+$", "", tweet_txt)
+
+tweet_corpus = Corpus(VectorSource(tweet_txt))
+
+#inspect(tweet_corpus[1:15])
+tdm = TermDocumentMatrix(tweet_corpus,
+                         control = list(wordLengths=c(5, Inf), removePunctuation = TRUE,
+                                        stopwords = c("through","thenew10","between","should","really","agree","around","looking","the","I","theyre","using","heres","about","their","english"),
+                                        tolower = TRUE))
+
+m = as.matrix(tdm)
+word_freqs = sort(rowSums(m), decreasing=TRUE)
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+#freq[2:100] is used b/c the #1 frequency item is SO frequent it messes up the scale
+wordcloud(dm$word, dm$freq[2:100], random.order=FALSE, colors=brewer.pal(8, "Dark2"))
+
