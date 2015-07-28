@@ -1,6 +1,10 @@
 library(twitteR)
 library(ggplot2)
 library(gridExtra)
+library(plyr)
+library(tm)
+library(tm.plugin.webmining)
+library(wordcloud)
 
 # Your constants
 CONSUMER_KEY = ''
@@ -48,6 +52,32 @@ p2 <- ggplot(data=tweets, aes(x=created)) +
              labs(title=paste(HASHTAG, " tweets per day")) +
              theme_bw() +
              theme(axis.title = element_text(face="bold"))
+
+# Plot number of tweeters
+tweets$dom = strftime(tweets$created, format="%d")
+tweeters = ddply(tweets, ~dom, summarise, count=length(unique(screenName)))
+p3 <- ggplot(data=tweeters, aes(x=dom)) + 
+             geom_histogram(aes(weight=count)) +
+             scale_x_discrete("Day of month") +
+             scale_y_continuous("Tweeters") +
+             labs(title=paste(HASHTAG, " tweeters per day")) +
+             theme_bw() +
+             theme(axis.title = element_text(face="bold"))
+
+# Tweet wordcloud
+# tweets.tm = Corpus(VectorSource(tweets$text))
+# tdm = TermDocumentMatrix(tweets.tm, control = list(removePunctuation = TRUE,
+#                                                    stopwords = c("new", "year", stopwords("english")),
+#                                                    removeNumbers = TRUE, tolower = TRUE))
+# 
+# 
+# extractHTMLStrip(tweets$text)
+# tweets.tm = tm_map(tweets.tm, removeWords, stopwords("english"))
+# tweets.tm = tm_map(tweets.tm, stemDocument)
+# tweets.tm = tm_map(tweets.tm, stripWhitespace)
+# tweets.tm <- tm_map(tweets.tm, tolower)
+# 
+# wordcloud(tweets.tm)
 
 # Plot both plots
 grid.arrange(p1, p2, nrow=1, ncol=2)
