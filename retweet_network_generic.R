@@ -5,6 +5,7 @@ library(plyr)
 library(tm)
 library(tm.plugin.webmining)
 library(wordcloud)
+library(igraph)
 
 # Your constants
 CONSUMER_KEY = 'Your Consumer Key'
@@ -61,7 +62,6 @@ E(g)$weight=as.numeric(freq_matrix[,3])
 adj=get.adjacency(g,attr='weight',sparse=FALSE) 
 
 #graph
-library(igraph)
 twitter_net <- graph.adjacency(adj, mode = "undirected")
 plot.igraph(twitter_net, vertex.size=3, vertex.label.family="sans",
             vertex.color="deepskyblue", vertex.label.cex=0.4, 
